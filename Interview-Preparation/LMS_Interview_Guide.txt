@@ -1,0 +1,385 @@
+﻿# LMS INTERVIEW PREPARATION GUIDE
+
+## Overview
+This guide covers Frontend (React/TypeScript), Backend (Spring Boot/Java), and AWS Architecture patterns used in the LMS system.
+
+---
+
+# PART 1: FRONTEND INTERVIEW GUIDE
+
+## React Hooks & Patterns
+
+### Q1: useState vs useReducer vs Context API
+- **useState**: Simple local state (form, toggles)
+- **useReducer**: Complex state with interdependencies
+- **Context API**: Global state accessible across component tree
+
+### Q2: Windowed Pagination Hook
+- Custom hook implementing cursor-based pagination
+- Client-side windowing for performance
+- Auto-prefetch next batch
+- Request deduplication via ref
+
+### Q3: Promise Coalescing for Token Refresh
+Multiple 401 responses → single refresh call (all requests share same promise)
+
+## TypeScript & Type Safety
+
+### Q4: Discriminated Unions
+Type narrowing using literal discriminant fields. Example: questionType = 'radio' | 'checkbox'
+
+### Q5: Generic Types
+useWindowedPagination<T> - reusable hook for any entity type with type safety
+
+## Performance & Optimization
+
+### Q6: useCallback & useMemo
+- useMemo: Memoize expensive computations
+- useCallback: Prevent child re-renders by maintaining function reference
+
+### Q7: Code Splitting
+React.lazy + Suspense for route-based code splitting reduces initial bundle size
+
+## API & Authentication
+
+### Q8: fetchWithAuth Pattern
+Centralized fetch service handling JWT injection, token refresh, and error handling
+
+### Q9: Service Layer Architecture
+29-31 service files, each handling specific domain (courses, users, assemblies)
+
+## OOP & Patterns
+
+### Q10: Static Utility Classes
+CDataCollector - utility functions without instantiation
+
+### Q11: Event Bubbling & Delegation
+Events propagate UP the DOM; delegate handlers to parents for efficiency
+
+---
+
+# PART 2: BACKEND INTERVIEW GUIDE
+
+## Spring Boot Architecture
+
+### Q1: Configuration & Annotations
+- @SpringBootApplication: Auto-config + component scanning
+- exclude: Skip DataSource auto-config when optional
+- @EnableCaching: Caffeine in-memory cache
+- @EnableWebSecurity: Security filters
+- @EnableMethodSecurity: @PreAuthorize annotations
+
+### Q2: DataSourceAutoConfiguration Exclusion
+EDS (optional) doesn't trigger datasource requirement
+
+## REST APIs
+
+### Q3: Endpoints Pattern
+- Base: /api/v1/
+- GET, POST, PUT, DELETE, PATCH, OPTIONS
+- Response: {status, data, error}
+
+### Q4: CORS Configuration
+- allowedOriginPatterns: Wildcard domain support
+- allowedHeaders: Content-Type, Authorization, X-Tenant-ID
+- allowCredentials: true
+- allowedMethods: All HTTP verbs
+
+## Database Design
+
+### Q5: Why DynamoDB
+- Automatic partition scaling
+- Natural tenant isolation (partition key)
+- Single-digit millisecond latency
+- Pay-per-request scaling
+- Eventual consistency acceptable
+
+### Q6: Single-Table Design
+- PK: tenantCode (multi-tenant)
+- SK: entityType#entityId
+- GSI on type field
+- Natural isolation + single transaction capability
+
+### Q7: Pagination
+- Base64-encoded cursor (lastEvaluatedKey)
+- Cursor-based (no offset)
+- O(1) lookup vs O(n) offset
+
+### Q8: Throughput Mitigation
+- Exponential backoff (100ms, 200ms, 400ms...)
+- Rate limiting (Resilience4j)
+- Pagination in chunks (1000 items)
+- Pay-per-request billing
+
+## Security
+
+### Q9: JWT Authentication Flow
+1. Lambda Authorizer validates JWT vs tenant Cognito pool
+2. Backend JWTFilter extracts claims + sets SecurityContext
+3. @PreAuthorize checks roles
+4. TenantUtil sets tenant for all DAOs
+
+### Q10: @PreAuthorize Annotations
+Method-level security checks before execution
+
+### Q11: Security Headers
+- HSTS: 1 year (force HTTPS)
+- CSP: Restrict script sources
+- X-Frame-Options: SAMEORIGIN
+- X-XSS-Protection: 1; mode=block
+
+## Multi-Tenancy
+
+### Q12: Tenant Scoping
+- Request Origin → tenant lookup
+- Lambda Authorizer gets tenant Cognito pool
+- JWTFilter sets TenantUtil (ThreadLocal)
+- DAOs filter queries by tenant partition key
+- Result: No data leakage between tenants
+
+## Caching
+
+### Q13: Caffeine Configuration
+- 30-min TTL for reference data
+- Maximum size: 500 items
+- @Cacheable decorator
+- @CacheEvict for invalidation
+
+### Q14: Cache Trade-offs
+- Pro: Reduce DB load
+- Con: Stale data
+- Solution: Short TTL + invalidation
+
+## Async Processing
+
+### Q15: CompletableFuture & Async Clients
+- Netty async HTTP client
+- Non-blocking I/O
+- Compare: 10 users × 100ms = 1s blocking vs 100ms async
+
+## Resilience
+
+### Q16: Circuit Breaker Pattern
+- CLOSED: Normal
+- OPEN: Service down, fail immediately
+- HALF_OPEN: Test recovery
+- Uses Resilience4j rate limiter
+
+---
+
+# PART 3: AWS INTERVIEW GUIDE
+
+## EventBridge
+
+### Q1: What & Why
+- Serverless event bus for routing
+- Decouples publishers from consumers
+- Cross-account event support
+- Built-in retry + filtering
+
+### Q2: Event Pattern Matching
+- source, detail-type, detail fields
+- AND logic within level, OR across values
+- Prevents unintended events
+
+### Q3: Lambda vs ECS Runtime
+- Lambda: Direct invocation, 5-10s cold start, pay-per-invocation
+- ECS: Always-on, 0s cold start, fixed cost
+- Choose based on traffic pattern + cost
+
+## SQS
+
+### Q4: Queue Setup
+- Visibility timeout: 300s
+- Message retention: 4 days
+- Long polling: 20s
+- DLQ with maxReceiveCount: 3
+
+### Q5: Message Flow
+- EventBridge → SQS (ECS runtime)
+- Message becomes invisible during processing
+- On crash: Reappears after visibility timeout
+- After 3 failures: Move to DLQ
+
+### Q6: Dead-Letter Queue
+- Isolated problematic messages
+- 14-day retention for investigation
+- Prevents infinite retries
+
+## S3
+
+### Q7: Event Notifications
+- s3:ObjectCreated:* triggers Lambda
+- Filter prefix/suffix for targeting
+- Lambda processes media
+
+### Q8: Presigned URLs
+- Temporary access to private S3 objects
+- Signed with AWS credentials
+- Tenant isolation: S3 key includes tenant prefix
+- Signature includes key path (unforgeable)
+
+## API Gateway
+
+### Q9: Lambda Authorizer Flow
+1. Extract Origin header → resolve tenant
+2. Load tenant-config.json from S3 (5-min cache)
+3. Get Cognito pool for tenant
+4. Verify JWT signature
+5. Return Allow/Deny policy
+
+### Q10: Verifier Caching
+- Without: 550ms per request (fetch JWKS + verify)
+- With: 51ms (1ms cache + 50ms verify)
+- 10x throughput improvement
+
+## Lambda
+
+### Q11: Provisioned Concurrency
+- Reserved warm instances
+- Cost: .015/hour per unit
+- Benefit: No cold starts
+- Breakeven: High utilization (&gt;70%)
+
+### Q12: Scaling Strategy (10x Traffic)
+1. Lambda: Increase provisioned concurrency
+2. DynamoDB: On-demand billing (auto-scale)
+3. EventBridge: Already scales
+4. Add caching (Redis)
+5. Database optimization (GSI, denormalization)
+
+## Multi-Region & Failover
+
+### Q13: Failover Architecture
+- Primary: ap-south-1
+- Failover: us-east-1
+- Route53: Health checks + weighted routing
+- DynamoDB: Multi-region replicas
+- EventBridge: Separate buses in each region
+
+### Q14: Failure Scenario
+- Health check fails (30s detection)
+- Route53 failover activates (~1min total)
+- Traffic routes to failover region
+
+## Terraform
+
+### Q15: Why Infrastructure as Code
+- Repeatable (dev = prod = test)
+- Version controlled
+- Auditable
+- Easily rollback
+
+### Q16: Multi-Environment
+- Separate tfstate per environment
+- Remote S3 backend with DynamoDB locking
+- Prevents concurrent applies
+
+---
+
+# KEY INTERVIEW SCENARIOS
+
+## Scenario 1: API Call Flow (Frontend to Database)
+1. User types search query
+2. Debounce 300ms
+3. Call courseService.search(query)
+4. fetchWithAuth adds JWT + tenant header
+5. API Gateway + Lambda Authorizer validates token
+6. Backend queries DynamoDB (tenant-scoped)
+7. Results cached in localStorage (5-min TTL)
+8. UI re-renders with results
+
+## Scenario 2: Event Processing Flow
+1. Course Management publishes lesson.publish event
+2. EventBridge matches pattern
+3. Routes to Lambda or SQS
+4. Lambda/ECS updates enrollments in DynamoDB
+5. Publishes cascade events (email, leaderboard)
+6. Email service picks up from SQS
+7. Sends survey emails via SES
+
+## Scenario 3: Multi-Tenant Request Isolation
+1. Request from https://tenant-a.lms.com
+2. Lambda Authorizer extracts hostname
+3. Looks up tenant-a in tenant-config (S3 cached)
+4. Gets tenant-a Cognito pool ID
+5. Verifies JWT with tenant-a keys
+6. Backend sets TenantUtil = tenant-a
+7. All DAOs filter by pk = tenant-a
+8. Request from tenant-b cannot see tenant-a data
+
+---
+
+# COMMON INTERVIEW QUESTIONS & ANSWERS
+
+### Q: How would you design a caching layer for this system?
+A: 
+1. In-memory: Caffeine for reference data (30-min TTL)
+2. Distributed: Redis for user sessions + hot data
+3. Edge: CloudFront for static assets
+4. Invalidation: Publish events on data changes
+
+### Q: How do you handle failures in EventBridge?
+A:
+1. Retry with exponential backoff (24 hours default)
+2. DLQ captures final failures
+3. Manual investigation + replay
+4. Application-level idempotency for duplicates
+
+### Q: What happens if Cognito is down?
+A:
+1. JWT verification fails
+2. Lambda Authorizer returns Deny
+3. Request rejected (403)
+4. Circuit breaker prevents cascading retries
+
+### Q: How do you scale to 10x traffic?
+A:
+1. Lambda: Provisioned concurrency
+2. DynamoDB: On-demand or increase WCU
+3. EventBridge: Already scales
+4. Caching: Add Redis
+5. Database: Add GSI, denormalize
+
+### Q: How do you ensure data consistency in multi-region?
+A:
+1. Strong consistency in primary region
+2. Eventual consistency in replicas
+3. RPO (recovery point) ~seconds
+4. Accept data loss if region fails
+
+---
+
+# TIPS FOR SUCCESS
+
+1. **Understand tradeoffs**: Why DynamoDB vs Postgres, why EventBridge vs Lambda-to-Lambda
+2. **Walk through flows**: Be able to diagram request path, event flow, failover scenario
+3. **Know the WHY**: Not just what technology, but why it was chosen
+4. **Think about scale**: 10x, 100x, regions, accounts
+5. **Security first**: Multi-tenancy isolation, least privilege, encryption
+6. **Cost awareness**: Provisioned vs on-demand, caching ROI
+7. **Failure scenarios**: Circuit breakers, timeouts, DLQ, retries
+8. **Monitoring**: CloudWatch, X-Ray, logging, metrics
+
+---
+
+# CODE SNIPPETS TO REMEMBER
+
+## Frontend Hook
+useWindowedPagination<T> for paginated lists with auto-prefetch
+
+## Backend Tenant Scoping
+pk = TenantUtil.getTenantCode() + sk = entityType#id
+
+## AWS Event Pattern
+{ "source": ["lesson.status"], "detail-type": ["LessonUpdate"] }
+
+## Lambda Authorizer
+Load tenant-config from S3 → verify JWT → return policy
+
+## Multi-Region Failover
+Route53 health check → weighted routing → traffic switches
+
+---
+
+Generated: 2026-09-17

@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interview Preparation - Reactive Programming, WebClient, CompletableFuture & ThreadLocal</title>
+<style>
+  @media print {
+    body { margin: 0; }
+    .page-break { page-break-before: always; }
+    .no-print { display: none; }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f4f6f9;
+    color: #1e1e1e;
+    line-height: 1.7;
+    padding: 20px;
+  }
+  .container { max-width: 900px; margin: 0 auto; }
+
+  /* Cover Page */
+  .cover {
+    text-align: center;
+    padding: 80px 30px;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: #fff;
+    border-radius: 16px;
+    margin-bottom: 40px;
+  }
+  .cover h1 { font-size: 2.4em; margin-bottom: 10px; letter-spacing: 1px; }
+  .cover h2 { font-size: 1.3em; font-weight: 400; color: #a0d2db; margin-bottom: 30px; }
+  .cover .meta { font-size: 0.95em; color: #ccc; }
+  .cover .topics { margin-top: 30px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .cover .topic-tag {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.85em;
+  }
+
+  /* Table of Contents */
+  .toc {
+    background: #fff;
+    border-radius: 12px;
+    padding: 30px 40px;
+    margin-bottom: 40px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .toc h2 { font-size: 1.5em; margin-bottom: 16px; color: #203a43; border-bottom: 2px solid #2c5364; padding-bottom: 8px; }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin-bottom: 6px; font-size: 0.97em; }
+  .toc a { color: #2c5364; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* QA Block */
+  .qa-block {
+    background: #fff;
+    border-radius: 12px;
+    margin-bottom: 36px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+  .qa-block .question {
+    background: #e8f4f8;
+    padding: 18px 28px;
+    font-weight: 600;
+    font-size: 1.05em;
+    color: #0f2027;
+    border-left: 5px solid #2c5364;
+  }
+  .qa-block .question::before { content: "🧑 You: "; color: #2c5364; }
+  .qa-block .answer { padding: 22px 28px; }
+  .qa-block .answer > p,
+  .qa-block .answer > ul,
+  .qa-block .answer > ol { margin-bottom: 14px; }
+
+  h3 { font-size: 1.15em; color: #203a43; margin: 20px 0 10px 0; }
+  h4 { font-size: 1.05em; color: #2c5364; margin: 16px 0 8px 0; }
+  ul, ol { padding-left: 24px; margin-bottom: 14px; }
+  li { margin-bottom: 6px; }
+  strong { color: #0f2027; }
+
+  /* Code blocks */
+  pre {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    padding: 16px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 0.88em;
+    line-height: 1.55;
+    margin: 12px 0 16px 0;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  }
+  code {
+    background: #e8edf3;
+    color: #c7254e;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  }
+  pre code { background: none; color: inherit; padding: 0; }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0 18px 0;
+    font-size: 0.92em;
+  }
+  th {
+    background: #2c5364;
+    color: #fff;
+    padding: 10px 14px;
+    text-align: left;
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e0e4ea;
+  }
+  tr:nth-child(even) td { background: #f7f9fc; }
+
+  /* Callout boxes */
+  .callout {
+    background: #fffbe6;
+    border-left: 4px solid #f5a623;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin: 14px 0;
+    font-size: 0.95em;
+  }
+  .callout.tip { background: #e6f9ee; border-left-color: #27ae60; }
+  .callout.warning { background: #fdf0f0; border-left-color: #e74c3c; }
+  .callout.info { background: #eef4ff; border-left-color: #3498db; }
+
+  /* Section divider */
+  .section-num {
+    display: inline-block;
+    background: #2c5364;
+    color: #fff;
+    width: 28px; height: 28px;
+    line-height: 28px;
+    text-align: center;
+    border-radius: 50%;
+    font-size: 0.85em;
+    margin-right: 8px;
+  }
+  .footer {
+    text-align: center;
+    padding: 30px;
+    color: #888;
+    font-size: 0.85em;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ==================== COVER PAGE ==================== -->
+<div class="cover">
+  <h1>🚀 Interview Preparation Guide</h1>
+  <h2>Reactive Programming, WebClient, CompletableFuture, ThreadLocal & Microservices Architecture</h2>
+  <div class="meta">Complete Q&A Chat Transcript &bull; Spring Boot &bull; Java Backend</div>
+  <div class="topics">
+    <span class="topic-tag">WebClient</span>
+    <span class="topic-tag">CompletableFuture</span>
+    <span class="topic-tag">ThreadLocal</span>
+    <span class="topic-tag">Spring WebFlux</span>
+    <span class="topic-tag">Reactive Programming</span>
+    <span class="topic-tag">DynamoDB Async</span>
+    <span class="topic-tag">BFF Pattern</span>
+    <span class="topic-tag">GraphQL</span>
+    <span class="topic-tag">Feign Client</span>
+    <span class="topic-tag">RestTemplate</span>
+    <span class="topic-tag">Microservices</span>
+  </div>
+</div>
+
+<!-- ==================== TABLE OF CONTENTS ==================== -->
+<div class="toc">
+  <h2>📑 Table of Contents</h2>
+  <ol>
+    <li><a href="#q1">How WebClient Works — Non-Blocking I/O Explained</a></li>
+    <li><a href="#q2">The Thread Hand-off: What Happens at the Network Level</a></li>
+    <li><a href="#q3">The "Fake Async" Trap — CompletableFuture .join() Problem</a></li>
+    <li><a href="#q4">Is Using a Single Aggregator API with RestTemplate OK?</a></li>
+    <li><a href="#q5">Brilliant Action Plans Beyond a Simple Aggregator</a></li>
+    <li><a href="#q6">CompletableFuture Trade-offs</a></li>
+    <li><a href="#q7">Loss of Context — The "Who Am I?" Problem Explained</a></li>
+    <li><a href="#q8">What Is Supposed to Happen When Context Is Lost</a></li>
+    <li><a href="#q9">What Is ThreadLocal?</a></li>
+    <li><a href="#q10">CompletableFuture Returning Null Fields</a></li>
+    <li><a href="#q11">How to Solve the "Who Am I" Problem</a></li>
+    <li><a href="#q12">Why CompletableFuture Asks for ThreadLocal but Normal Requests Don't</a></li>
+    <li><a href="#q13">What Happens to ThreadLocal When CompletableFuture Hands Off</a></li>
+    <li><a href="#q14">Best Approach — GraphQL and Beyond</a></li>
+    <li><a href="#q15">Why Is the Project Still Using RestTemplate?</a></li>
+    <li><a href="#q16">Why Not Feign Client?</a></li>
+    <li><a href="#q17">What Is Reactive Programming / Spring WebFlux?</a></li>
+    <li><a href="#q18">If Starting from Scratch — LMS Architecture Blueprint</a></li>
+    <li><a href="#q19">Deep Dive into WebClient</a></li>
+    <li><a href="#q20">WebClient vs WebFlux — When to Use What</a></li>
+    <li><a href="#q21">Using DynamoDB Local — Async Strategy</a></li>
+    <li><a href="#q22">DynamoDB Async Verification Checklist</a></li>
+    <li><a href="#q23">Overall Action Plan — DynamoDB + WebClient + Everything</a></li>
+    <li><a href="#q24">Why Does the Background Thread Need "Who Am I"?</a></li>
+  </ol>
+</div>
+
+<!-- ==================== Q1 ==================== -->
+<div class="qa-block" id="q1">
+  <div class="question">When you use WebClient: No thread babysits. The system sends the request and tells the OS: "Wake me up when the data arrives." The thread is immediately released to do other work. You could handle those 500 requests with just 4 or 8 threads.</div>
+  <div class="answer">
+    <p>This is the fundamental principle of <strong>Non-Blocking I/O</strong>. Unlike traditional blocking I/O (RestTemplate), where each thread "sleeps" until data arrives, WebClient uses an <strong>Event Loop</strong> model (powered by Netty).</p>
+    <h3>Key Concept</h3>
+    <ul>
+      <li><strong>Blocking (RestTemplate):</strong> 500 requests = 500 threads sitting idle, doing nothing but waiting.</li>
+      <li><strong>Non-Blocking (WebClient):</strong> 500 requests = 4-8 threads juggling all requests. No thread waits.</li>
+    </ul>
+    <div class="callout info">
+      <strong>💡 Additional Info:</strong> The "Event Loop" is similar to how Node.js works. A single loop constantly checks: "Is any data ready?" When data arrives, it picks it up and processes it. This is why reactive systems can handle massive concurrency with minimal resources.
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Q2 ==================== -->
+<div class="qa-block" id="q2">
+  <div class="question">The call is handled by a thread. Then what is happening? If the network is reached, what will happen? When network reaches back, what happens if that particular thread is not available?</div>
+  <div class="answer">
+    <p>Think of it less like a dedicated waiter standing at your table, and more like a high-tech kitchen where the staff only touches a dish when there is an actual action to perform.</p>
+
+    <h3><span class="section-num">1</span> The Hand-off: "Registered, Not Waiting"</h3>
+    <p>When you make a call with WebClient, the request is handled by a thread from an <strong>Event Loop group</strong> (usually powered by Netty).</p>
+    <ul>
+      <li><strong>The Action:</strong> The thread sends the request to the Network Interface Card (NIC).</li>
+      <li><strong>The Registration:</strong> Instead of staying on the line, the thread registers a "callback" or a "selector" with the Operating System (using mechanisms like <code>epoll</code> on Linux or <code>kqueue</code> on macOS).</li>
+      <li><strong>The Release:</strong> The thread says, "I'm done for now," and immediately goes back to the pool to handle other incoming HTTP requests or calculate logic.</li>
+    </ul>
+
+    <h3><span class="section-num">2</span> At the Network Level</h3>
+    <p>While the data is traveling across the internet, <strong>no thread in your application is doing anything</strong> for this specific request. The CPU is effectively at 0% usage for this task. The "waiting" is happening at the hardware level (the NIC) and the OS Kernel level.</p>
+
+    <h3><span class="section-num">3</span> The "Wake Up" (The Arrival)</h3>
+    <p>When the response data finally hits your network card:</p>
+    <ul>
+      <li>The OS Kernel receives the packets.</li>
+      <li>The Kernel sees that a specific "Socket" has data ready.</li>
+      <li>The Kernel triggers an event (a signal) to your application's Event Loop.</li>
+    </ul>
+
+    <h3><span class="section-num">4</span> What if that original thread is busy?</h3>
+    <p>This is the <strong>"aha!" moment: It doesn't matter.</strong></p>
+    <p>In a non-blocking system, <strong>any available thread</strong> in the Event Loop pool can pick up the response.</p>
+    <ul>
+      <li><strong>The Task is an Event:</strong> The "arrival of data" is just a new task placed in a queue.</li>
+      <li><strong>The Thread Pool:</strong> The Event Loop (usually a very small number of threads, like the number of CPU cores) is constantly spinning. As soon as one is free, it picks up your data and starts processing.</li>
+    </ul>
+    <div class="callout tip">
+      <strong>Key Insight:</strong> If "Thread A" (who started the request) is busy calculating a math problem for another user, "Thread B" will simply pick up your response and finish the job. They are all "equal" in the eyes of the Event Loop.
+    </div>
+
+    <h3><span class="section-num">5</span> How does it remember what to do?</h3>
+    <p>If a different thread picks up the work, you might wonder: "How does it know where we left off?"</p>
+    <p>This is handled by <strong>State</strong>. When the request was first sent, WebClient created a small object (a "continuation" or "callback chain") that contains:</p>
+    <ul>
+      <li>The instructions on what to do next (e.g., <code>map</code>, <code>flatMap</code>, <code>subscribe</code>).</li>
+      <li>The context (security headers, user IDs, etc.).</li>
+    </ul>
+    <p>This object lives in the <strong>Heap memory</strong>, not on the Thread Stack. Because it's in the Heap, <strong>any thread</strong> in the pool can grab that object, look at the instructions, and execute them.</p>
+
+    <h3>Summary Table</h3>
+    <table>
+      <tr><th>Feature</th><th>Blocking (RestTemplate)</th><th>Non-Blocking (WebClient)</th></tr>
+      <tr><td>Wait Method</td><td>Thread sleeps until data arrives.</td><td>Thread is released to the pool.</td></tr>
+      <tr><td>Scaling</td><td>Need 1 thread per 1 request.</td><td>1 thread can handle 1000s of requests.</td></tr>
+      <tr><td>Who "waits"?</td><td>The Application Thread.</td><td>The OS Kernel/Network Card.</td></tr>
+      <tr><td>Resumption</td><td>Same thread continues.</td><td>Any available Event Loop thread continues.</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== Q3 ==================== -->
+<div class="qa-block" id="q3">
+  <div class="question">It looks like you've made a great first step by parallelizing your calls using CompletableFuture. However, you are currently caught in the "Async Paradox." How do we fix this?</div>
+  <div class="answer">
+    <h3><span class="section-num">1</span> The "Fake Async" Trap (The .join() problem)</h3>
+    <p>In your <code>getStaticData</code> method, you have this line:</p>
+    <pre><code>CompletableFuture.allOf(tenantDataFuture, localeFuture).join(); // THIS IS BLOCKING</code></pre>
+    <p>By calling <code>.join()</code>, you are telling the Spring Boot request thread: "Don't do anything else. Sit here and wait until these two tasks are done." While the tasks run in parallel, you are still tying up a worker thread for the entire duration of the I/O. In a high-traffic environment, this leads to <strong>Thread Starvation</strong>.</p>
+    <div class="callout warning">
+      <strong>⚠️ The Fix:</strong> Instead of returning <code>LandingPageStaticDataResponse</code>, your service should return <code>CompletableFuture&lt;LandingPageStaticDataResponse&gt;</code>.
+    </div>
+
+    <h3><span class="section-num">2</span> Stop Wrapping Blocking Calls</h3>
+    <p>Currently, you are doing this:</p>
+    <pre><code>CompletableFuture.supplyAsync(() -> landingPageTenantDao.findLandingPageData(...))</code></pre>
+    <p>This is "Manual Async." You are taking a blocking DAO call and forcing it into a separate thread pool (<code>dynamoDbExecutor</code>). This is better than serial execution, but it's inefficient because you're just managing a bunch of "waiting" threads.</p>
+    <div class="callout tip">
+      <strong>✅ The Fix:</strong> Use the AWS SDK v2 Async Client. If you switch your <code>landingPageTenantDao</code> to use the <code>DynamoDbAsyncClient</code>, the code becomes much cleaner and uses zero extra threads to wait for the database.
+    </div>
+
+    <h3>What your code should look like:</h3>
+    <pre><code>public CompletableFuture&lt;LandingPageStaticDataResponse&gt; getStaticData(
+        String languageCode, String category, Boolean status) {
+    String tenantCode = TenantUtil.getTenantCode();
+
+    // No supplyAsync needed! These return Futures natively.
+    CompletableFuture&lt;LandingPageTenantData&gt; tenantDataFuture =
+        landingPageTenantDao.findLandingPageDataAsync(tenantCode, category, status);
+    CompletableFuture&lt;List&lt;LocaleRequestDTO&gt;&gt; localeFuture =
+        localeDataService.getLocaleDataByLanguageCodeAsync(languageCode);
+
+    // Chain the results together without EVER calling .join()
+    return CompletableFuture.allOf(tenantDataFuture, localeFuture)
+        .thenApply(v -> {
+            LandingPageTenantData tenantData = tenantDataFuture.join(); // Safe here, they are finished
+            return LandingPageStaticDataResponse.builder()
+                .popularLink(toPopularLinksResponse(tenantData.getPopularLinks()))
+                // ... rest of mapping
+                .build();
+        });
+}</code></pre>
+
+    <h3><span class="section-num">3</span> The RestTemplate Bottleneck</h3>
+    <p>RestTemplate is strictly synchronous. Even if you wrap it in a <code>CompletableFuture</code>, it still blocks a thread until the other service responds.</p>
+    <div class="callout tip">
+      <strong>✅ The Fix:</strong> Switch to <strong>WebClient</strong>. It can handle thousands of concurrent requests with just a few threads.
+    </div>
+
+    <h3><span class="section-num">4</span> Security Context & Thread Locals</h3>
+    <p>Manually capturing the SecurityContext and passing it into your CompletableFuture is a "code smell" caused by using manual thread pools. When you move to a truly Reactive or Async stack (like Spring WebFlux), the framework handles the <strong>Context Propagation</strong> for you.</p>
+
+    <h3>Your "Lag-Killing" Action Plan</h3>
+    <table>
+      <tr><th>Problem</th><th>Current State</th><th>Target State</th></tr>
+      <tr><td>I/O Strategy</td><td>CompletableFuture.supplyAsync + Blocking DAO</td><td>DynamoDbAsyncClient (Native Async)</td></tr>
+      <tr><td>Request Thread</td><td>Blocks on .join()</td><td>Returns CompletableFuture or Mono</td></tr>
+      <tr><td>Service-to-Service</td><td>RestTemplate (Blocking)</td><td>WebClient (Non-blocking)</td></tr>
+      <tr><td>Threading</td><td>High overhead (Manual Executors)</td><td>Low overhead (Event Loop / Netty)</td></tr>
+    </table>
+
+    <div class="callout info">
+      <strong>💡 Why this fixes the "Lag":</strong> The lag you are seeing isn't because DynamoDB is slow—it's because your backend is "waiting" for DynamoDB. When hundreds of frontend calls come in, your backend runs out of threads to process the wait-list, so it starts queueing requests. This queueing is what the user feels as "lag."
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Q4 ==================== -->
+<div class="qa-block" id="q4">
+  <div class="question">I have so many backend services. From frontend I am calling so many APIs. So much lag. To solve that, from frontend he is sending a particular API. In that service using RestTemplate it's calling other endpoints. Is that ok? Will that create a drastic change?</div>
+  <div class="answer">
+    <p>It sounds like you've run into the classic <strong>"Chatty Frontend" problem</strong>. Having your frontend make 10–20 separate calls is like going to the grocery store 20 times to buy 20 items instead of just taking one big list.</p>
+    <p>What you are describing—creating a single service to aggregate these calls—is a legitimate architectural pattern often called <strong>API Composition</strong> or the <strong>Backend for Frontend (BFF)</strong> pattern.</p>
+
+    <h3>Will it create a "drastic change"?</h3>
+    <p><strong>Yes, but with a major catch.</strong> If you just move the calls to the backend but execute them one after another, you'll save on network "trips," but the total time might still be high.</p>
+
+    <h3><span class="section-num">1</span> Why it helps (The Good News)</h3>
+    <ul>
+      <li><strong>Reduced Round-Trip Time (RTT):</strong> Latency between a user's phone/browser and your server is usually high (~100ms). Latency between backend services is tiny (&lt;5ms). Moving logic to the backend cuts out the "long distance" travel.</li>
+      <li><strong>Smaller Payload:</strong> Instead of the frontend receiving 10 massive JSON objects and only using two fields from each, your "aggregator" can strip out the junk and send back exactly what the frontend needs.</li>
+      <li><strong>Less Overhead:</strong> You only do one TLS handshake and one set of headers/authentication instead of dozens.</li>
+    </ul>
+
+    <h3><span class="section-num">2</span> The "RestTemplate" Trap</h3>
+    <p>By default, RestTemplate is <strong>synchronous (blocking)</strong>. If your new service calls Service A, waits, then calls Service B, then waits, the user is still stuck waiting for the <strong>sum of all response times</strong>.</p>
+    <div class="callout tip">
+      <strong>✅ How to optimize:</strong> Use <code>CompletableFuture</code> (if sticking with Java/Spring) to fire off all requests at once. The total wait time will then be the time of the <strong>slowest single service</strong>, not the sum of all of them.
+    </div>
+
+    <h3>Comparison Table</h3>
+    <table>
+      <tr><th>Feature</th><th>Old Way (Direct Calls)</th><th>New Way (Aggregator/BFF)</th></tr>
+      <tr><td>Network Hops</td><td>Many (High Latency)</td><td>One (High Latency) + Many (Low Latency)</td></tr>
+      <tr><td>Data Processing</td><td>Done by the Browser</td><td>Done by the Server (Faster)</td></tr>
+      <tr><td>Mobile Performance</td><td>Poor (Battery drain/Lag)</td><td>Excellent</td></tr>
+      <tr><td>Complexity</td><td>Simple but slow</td><td>Higher backend maintenance</td></tr>
+    </table>
+
+    <div class="callout info">
+      <strong>The Verdict:</strong> It is absolutely okay to do this; in fact, it's <strong>recommended</strong> for complex microservice architectures. However, make sure your backend service is fetching those resources <strong>concurrently</strong>.
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Q5 ==================== -->
+<div class="qa-block" id="q5">
+  <div class="question">Instead of that, do you have any brilliant action plan than this?</div>
+  <div class="answer">
+    <p>If you're looking for a "brilliant" upgrade over a simple manual aggregator, you need to move from <strong>Aggregation to Orchestration</strong>.</p>
+
+    <h3>Strategy 1: GraphQL Federation (The "Gold Standard")</h3>
+    <p>Instead of writing custom code for every new screen, you use <strong>GraphQL</strong>. It acts as a single entry point for the frontend.</p>
+    <ul>
+      <li><strong>How it works:</strong> The frontend sends one request describing exactly what data it needs.</li>
+      <li><strong>The "Brilliant" Part:</strong> The GraphQL engine (Apollo Router or Netflix DGS) automatically figures out which microservices to call, fetches them in parallel, and stitches the data together.</li>
+      <li><strong>Why it's better:</strong> You stop writing "Aggregator" endpoints every time the UI changes.</li>
+    </ul>
+
+    <h3>Strategy 2: The Reactive BFF (Backend-for-Frontend)</h3>
+    <p>If you stick with Java/Spring, dump RestTemplate immediately. Move to Spring <strong>WebClient with Project Reactor</strong> (Flux/Mono).</p>
+    <ul>
+      <li>Use <code>Mono.zip()</code> to fire 10 API calls simultaneously.</li>
+      <li>Memory usage drops and "Total Time" becomes the time of your slowest single dependency.</li>
+    </ul>
+
+    <h3>Strategy 3: HTTP/2 or HTTP/3 Multiplexing</h3>
+    <p>Sometimes the lag isn't the backend's fault; it's the browser's "Connection Limit." Browsers usually only allow <strong>6 concurrent connections</strong> to one domain.</p>
+    <ul>
+      <li>Ensure your Load Balancer is configured for <strong>HTTP/2 or HTTP/3</strong>.</li>
+      <li>HTTP/2 allows <strong>Multiplexing</strong>: 50 requests over a single TCP connection simultaneously.</li>
+    </ul>
+
+    <h3>Comparison of Solutions</h3>
+    <table>
+      <tr><th>Solution</th><th>Effort</th><th>Performance Boost</th><th>Best For...</th></tr>
+      <tr><td>Manual Aggregator</td><td>Low</td><td>Moderate</td><td>Quick fixes for 2-3 calls</td></tr>
+      <tr><td>Reactive WebClient</td><td>Medium</td><td>High</td><td>High-traffic Java environments</td></tr>
+      <tr><td>GraphQL Federation</td><td>High</td><td>Extreme</td><td>Large teams with 10+ microservices</td></tr>
+      <tr><td>HTTP/2 Enablement</td><td>Very Low</td><td>Subtle/Impactful</td><td>Reducing browser-level queuing</td></tr>
+    </table>
+
+    <h3>The "Brilliant" Action Plan (Step-by-Step)</h3>
+    <ol>
+      <li><strong>Immediate (The "Firefighter" Move):</strong> Convert your RestTemplate calls to CompletableFuture or WebClient so they run in parallel.</li>
+      <li><strong>Infrastructure (The "Invisible" Move):</strong> Check if your servers support HTTP/2. If not, turn it on.</li>
+      <li><strong>Architectural (The "Future-Proof" Move):</strong> Evaluate GraphQL.</li>
+    </ol>
+
+    <div class="callout tip">
+      <strong>🔥 Pro Tip:</strong> Look into <strong>Response Compression (Gzip/Brotli)</strong>. If you are aggregating many services, your final JSON might be huge. Compressing it can shave another 200–500ms off the download time for users on mobile data.
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Q6 ==================== -->
+<div class="qa-block" id="q6">
+  <div class="question">If I use CompletableFuture, what are the trade-offs?</div>
+  <div class="answer">
+    <p>Switching from sequential to <code>CompletableFuture</code> is like moving from a single-lane road to a multi-lane highway. It's much faster, but the risk of a "traffic jam" or a "crash" becomes more complex to manage.</p>
+
+    <h3><span class="section-num">1</span> The "Common Pool" Trap (Resource Exhaustion)</h3>
+    <p>By default, <code>CompletableFuture</code> uses the <code>ForkJoinPool.commonPool()</code>.</p>
+    <ul>
+      <li><strong>The Risk:</strong> This pool is shared across your entire JVM. If your API aggregation logic gets hit with high traffic and eats up all threads in the common pool, it can <strong>starve other parts</strong> of your application.</li>
+      <li><strong>The Fix:</strong> Always define a <strong>Custom Executor</strong> (a dedicated Thread Pool).</li>
+    </ul>
+
+    <h3><span class="section-num">2</span> Loss of Context (The "Who Am I?" Problem)</h3>
+    <p>Many frameworks use <strong>ThreadLocal</strong> variables to store data like:</p>
+    <ul>
+      <li><strong>Spring Security Context:</strong> The current logged-in user.</li>
+      <li><strong>MDC/Logging:</strong> The Trace ID used to follow a request through logs.</li>
+      <li><strong>Transaction Context:</strong> Database transaction state.</li>
+    </ul>
+    <div class="callout warning">
+      <strong>⚠️ The Trade-off:</strong> When you jump to a new thread via CompletableFuture, that ThreadLocal data <strong>does not follow you</strong>. Your logs might show a blank "User ID," or your security checks might fail.
+    </div>
+
+    <h3><span class="section-num">3</span> "Hell" of Exception Handling</h3>
+    <p>In a synchronous world, you just use try-catch. In an asynchronous world, if one of your 10 API calls fails:</p>
+    <ul>
+      <li>You must decide: if Call #4 fails, do we fail the whole request? Or return "null" for that field?</li>
+      <li>You must use methods like <code>.handle()</code>, <code>.exceptionally()</code>, or <code>.whenComplete()</code>.</li>
+    </ul>
+
+    <h3><span class="section-num">4</span> The "Slowest Link" Bottleneck</h3>
+    <p>Even with 100 threads, your total response time is governed by the <strong>slowest single API</strong>.</p>
+    <ul>
+      <li><strong>The Risk:</strong> If 9 APIs respond in 50ms but the 10th takes 5 seconds, your "fast" aggregator still takes 5 seconds.</li>
+      <li><strong>The Fix:</strong> Implement <strong>Timeouts</strong> on every CompletableFuture.</li>
+    </ul>
+
+    <h3>Summary Comparison Table</h3>
+    <table>
+      <tr><th>Feature</th><th>Synchronous (RestTemplate)</th><th>Asynchronous (CompletableFuture)</th></tr>
+      <tr><td>Performance</td><td>Slow (Sum of all calls)</td><td>Fast (Slowest single call)</td></tr>
+      <tr><td>Debugging</td><td>Easy (Linear stack trace)</td><td>Hard (Fragmented stack traces)</td></tr>
+      <tr><td>Resource Usage</td><td>Low (One thread per request)</td><td>High (Multiple threads per request)</td></tr>
+      <tr><td>Complexity</td><td>Low</td><td>High</td></tr>
+    </table>
+
+    <div class="callout warning">
+      <strong>🔥 Pro-Tip: The "Fail-Fast" Strategy:</strong> If you use <code>CompletableFuture.allOf(...)</code> to wait for all services to finish, and one fails, the others are still running in the background wasting resources. Ensure your custom thread pool has a <strong>rejection policy</strong> so your server doesn't crash under heavy load.
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Q7 ==================== -->
+<div class="qa-block" id="q7">
+  <div class="question">Loss of Context (The "Who Am I?" Problem) — couldn't understand. Explain with example.</div>
+  <div class="answer">
+    <p>Imagine your backend is like a <strong>high-end restaurant</strong>.</p>
+    <p>When a request comes in, a <strong>Waitstaff (The Main Thread)</strong> is assigned to that table. This waiter carries a "notepad" (the ThreadLocal) where they've written down important things: the Customer's Name, the Table Number, and the Order ID.</p>
+    <p>When you use CompletableFuture, it's like the waiter hiring a <strong>Runner (A Worker Thread)</strong> from the kitchen to go fetch the appetizer.</p>
+
+    <h3>The "Who Am I?" Scenario</h3>
+    <ul>
+      <li>The Waitstaff (Thread A) knows the Customer is "Alice" and the Trace ID is REQ-123.</li>
+      <li>The Waitstaff tells the Runner (Thread B): "Go fetch the salad."</li>
+      <li>The Runner (Thread B) runs to the salad station. But here is the problem: <strong>The Runner didn't take the Waitstaff's notepad.</strong></li>
+    </ul>
+
+    <h3>A Real Code Example</h3>
+    <pre><code>// We are in the Main Request Thread (Thread A)
+log.info("Processing request for user: " +
+    SecurityContextHolder.getContext().getAuthentication().getName());
+// Output: "Processing request for user: Alice"
+
+CompletableFuture&lt;String&gt; future = CompletableFuture.supplyAsync(() -> {
+    // We are now in a Background Thread (Thread B)
+
+    // 1. LOGGING FAIL:
+    log.info("Fetching data...");
+    // Output: "Fetching data..." (The Trace ID is MISSING from the logs!)
+
+    // 2. SECURITY FAIL:
+    String user = SecurityContextHolder.getContext()
+        .getAuthentication().getName();
+    // CRASH! NullPointerException. Thread B has no idea who "Alice" is.
+
+    return "Data";
+}, customExecutor);</code></pre>
+
+    <h3>The Risks in Detail</h3>
+    <ul>
+      <li><strong>MDC (Logging):</strong> If you don't propagate the context, your logs will be a mess. You'll see a request start with TraceID: 123, but the actual work will have no ID.</li>
+      <li><strong>Spring Security:</strong> Your CompletableFuture will fail with a <strong>401 Unauthorized</strong> because it thinks an "Anonymous User" is trying to make the call.</li>
+      <li><strong>Transactions (@Transactional):</strong> Transactions are tied to the thread. If Thread A starts a transaction and Thread B tries to save data, Thread B is not part of Alice's transaction. If Thread A rolls back, Thread B's work might have already been committed.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== Q8 ==================== -->
+<div class="qa-block" id="q8">
+  <div class="question">When the context is lost, what is supposed to happen then?</div>
+  <div class="answer">
+    <p>When the context is lost, your application doesn't just "slow down"—it starts <strong>failing in confusing ways</strong> or becoming impossible to debug.</p>
+
+    <h3><span class="section-num">1</span> The Security "Access Denied" Failure</h3>
+    <p>The new thread tries to execute an API call. It looks for the user's "Security Badge" in its ThreadLocal memory. It finds nothing.</p>
+    <ul>
+      <li>You get a <strong>NullPointerException</strong> (if your code assumes a user is logged in).</li>
+      <li>Or, Spring throws an <strong>AccessDeniedException</strong> or a <strong>401 Unauthorized</strong>, even though the user is actually logged in.</li>
+    </ul>
+
+    <h3><span class="section-num">2</span> The "Invisible" Logs (MDC)</h3>
+    <p>Your main thread logs: <code>[ID: 12345] - Starting Request</code>. Then the CompletableFuture starts. The background thread's logs: <code>[ID: ] - Fetching User Profile</code>.</p>
+    <p>When a bug happens in production, you search your logs for ID: 12345. You will only see the start and end. All the "meat" of what happened inside the parallel threads will be <strong>invisible to your search</strong>.</p>
+
+    <h3><span class="section-num">3</span> API Token Disappearance</h3>
+    <p>If your RestTemplate/Feign client is configured to grab a JWT token from the current request, the interceptor looks for the <code>RequestContext</code>. Since it's a new thread, the RequestContext is <code>null</code>. The outgoing call is sent <strong>without an Authorization header</strong>. Your other backend services will reject the call with a <strong>401 Unauthorized</strong>.</p>
+
+    <h3><span class="section-num">4</span> Database Transaction Breakage</h3>
+    <p>If your main method is <code>@Transactional</code> and you start a CompletableFuture that writes to the database, that background work is <strong>not part of the same transaction</strong>.</p>
+    <ul>
+      <li>If the main request fails and rolls back, the background thread's work will <strong>not roll back</strong>.</li>
+      <li>You end up with <strong>"zombie data"</strong>—part saved, the rest lost.</li>
+    </ul>
+
+    <h3>How to solve this (The "Spring Way" — TaskDecorator)</h3>
+    <pre><code>public class MdcTaskDecorator implements TaskDecorator {
+    @Override
+    public Runnable decorate(Runnable runnable) {
+        // 1. Grab the "notepad" from the Main Thread
+        Map&lt;String, String&gt; contextMap = MDC.getCopyOfContextMap();
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+
+        return () -> {
+            try {
+                // 2. Put the "notepad" into the Background Thread
+                if (contextMap != null) MDC.setContextMap(contextMap);
+                SecurityContextHolder.setContext(securityContext);
+
+                runnable.run();
+            } finally {
+                // 3. Clean up when finished
+                MDC.clear();
+                SecurityContextHolder.clearContext();
+            }
+        };
+    }
+}</code></pre>
+  </div>
+</div>
+
+<!-- ==================== Q9 ==================== -->
+<div class="qa-block" id="q9">
+  <div class="question">Who is ThreadLocal?</div>
+  <div class="answer">
+    <p><code>ThreadLocal</code> isn't a "who"—it is a <strong>"where."</strong></p>
+    <p>Think of ThreadLocal as a <strong>private locker inside a thread</strong>. It is a special way to store data so that it is only accessible by the specific thread that put it there.</p>
+
+    <h3>The Analogy: "Shared Fridge" vs. "Personal Lunchbox"</h3>
+    <ul>
+      <li><strong>Static/Global Variables (The Shared Fridge):</strong> If you put a sandwich in a shared office fridge, anyone can eat it or change it. This leads to "Race Conditions."</li>
+      <li><strong>ThreadLocal (The Personal Lunchbox):</strong> Every employee brings their own lunchbox. Even if everyone is eating "a sandwich," you only have access to <strong>your</strong> sandwich.</li>
+    </ul>
+
+    <h3>The 3 Most Common Contents of a ThreadLocal Locker</h3>
+    <ol>
+      <li><strong>Security Context:</strong> "Who is the user currently making this request?" (Spring Security)</li>
+      <li><strong>Transaction Status:</strong> "Is there a database transaction currently open for this thread?"</li>
+      <li><strong>Trace ID:</strong> "What is the unique ID for this specific request so I can track it in the logs?" (MDC)</li>
+    </ol>
+
+    <p>Instead of writing: <code>userService.doSomething(user, token, traceId, transactionId);</code></p>
+    <p>You just write: <code>userService.doSomething();</code> — Inside that method, you ask the ThreadLocal for the values.</p>
+
+    <h3>The "Memory Leak" Danger</h3>
+    <div class="callout warning">
+      <strong>⚠️ Critical:</strong> Because threads in backend services (like Tomcat) are <strong>reused</strong> (Thread Pooling), the thread doesn't "die" after a request. If you put data into a ThreadLocal and don't clean it up, the next request that uses that same thread will "inherit" the old data. <strong>User A finishes → User B starts on the same thread → System thinks User B is User A.</strong>
+    </div>
+    <p>This is why you almost always see ThreadLocal used with a <code>try-finally</code> block to ensure <code>threadLocal.remove()</code> is called.</p>
+
+    <h3>Why this breaks your CompletableFuture</h3>
+    <ul>
+      <li><strong>Thread A (Main):</strong> Has "User: Alice" in its locker.</li>
+      <li><strong>Thread B (CompletableFuture):</strong> Is a totally different thread. It has its own lockers, but they are all <strong>empty</strong>.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== Q10 ==================== -->
+<div class="qa-block" id="q10">
+  <div class="question">CompletableFuture is what I used. So when I called other service, as response it is giving null for particular fields.</div>
+  <div class="answer">
+    <p>This is <strong>exactly</strong> what happens when the "Who Am I?" problem strikes. The most common reason for those specific null values when using CompletableFuture is a <strong>Missing Authorization Header</strong>.</p>
+
+    <h3>The "Silent Failure" Scenario</h3>
+    <ol>
+      <li><strong>The Interceptor Fails:</strong> You probably have a RestTemplate interceptor configured to grab the JWT token from the current request.</li>
+      <li><strong>ThreadLocal is Empty:</strong> Because you are in a CompletableFuture thread, that interceptor asks the ThreadLocal for the token. The ThreadLocal says: "I don't have a token."</li>
+      <li><strong>The Request is Sent "Naked":</strong> Your aggregator service calls the downstream service <strong>without the security token</strong>.</li>
+      <li><strong>Downstream Service Logic:</strong> The downstream service sees no token. Instead of crashing (401), it might return a "Public Version" where sensitive fields are simply <code>null</code>.</li>
+    </ol>
+
+    <h3>How to Verify This (The Debug Test)</h3>
+    <pre><code>CompletableFuture.supplyAsync(() -> {
+    // TEST 1: Check Security Context
+    System.out.println("User in Thread: " +
+        SecurityContextHolder.getContext().getAuthentication());
+
+    // TEST 2: Check Request Headers (if using Spring Web)
+    System.out.println("Request Attributes: " +
+        RequestContextHolder.getRequestAttributes());
+
+    return otherService.getData();
+}, myExecutor);</code></pre>
+    <p>If those print <code>null</code>, you have found your culprit.</p>
+
+    <h3>Other Common Causes for null in CompletableFuture</h3>
+    <ul>
+      <li><strong>The "Swallowed" Exception:</strong> If you have <code>.exceptionally(ex -> { return null; })</code> — if the downstream timed out, your code returns null.</li>
+      <li><strong>Jackson Mapping (Naming Mismatch):</strong> snake_case vs camelCase mapping issues.</li>
+      <li><strong>Race Conditions:</strong> Trying to access the result before CompletableFuture finished.</li>
+    </ul>
+
+    <h3>The Immediate Fix</h3>
+    <pre><code>// 1. Capture context in the MAIN thread
+SecurityContext context = SecurityContextHolder.getContext();
+
+CompletableFuture.supplyAsync(() -> {
+    try {
+        // 2. Set context in the NEW thread
+        SecurityContextHolder.setContext(context);
+        return restTemplate.getForObject(url, MyClass.class);
+    } finally {
+        // 3. Always clear it!
+        SecurityContextHolder.clearContext();
+    }
+}, myExecutor);</code></pre>
+  </div>
+</div>
+
+<!-- ==================== Q11 ==================== -->
+<div class="qa-block" id="q11">
+  <div class="question">How to solve the issue "Who Am I"? ThreadLocal purpose?</div>
+  <div class="answer">
+    <p>To solve the "Who Am I" problem, you need to build a <strong>bridge</strong> between your main thread and your background threads.</p>
+
+    <h3>Option A: The Manual Hand-off (Quick fixes)</h3>
+    <pre><code>// 1. Capture the "Who Am I" info in the MAIN thread
+SecurityContext context = SecurityContextHolder.getContext();
+Map&lt;String, String&gt; mdcContext = MDC.getCopyOfContextMap();
+
+CompletableFuture.supplyAsync(() -> {
+    try {
+        // 2. Set the "Who Am I" info in the NEW thread
+        SecurityContextHolder.setContext(context);
+        if (mdcContext != null) MDC.setContextMap(mdcContext);
+
+        // Now your API call will have the User and the Trace ID!
+        return restTemplate.getForObject(url, MyClass.class);
+    } finally {
+        // 3. IMPORTANT: Clean up so the thread is fresh for the next request
+        SecurityContextHolder.clearContext();
+        MDC.clear();
+    }
+}, myExecutor);</code></pre>
+
+    <h3>Option B: The "Spring Way" (TaskDecorator) — Recommended</h3>
+    <p><strong>Define the Decorator:</strong></p>
+    <pre><code>public class ContextCopyingDecorator implements TaskDecorator {
+    @Override
+    public Runnable decorate(Runnable runnable) {
+        SecurityContext context = SecurityContextHolder.getContext();
+        Map&lt;String, String&gt; mdc = MDC.getCopyOfContextMap();
+        return () -> {
+            try {
+                SecurityContextHolder.setContext(context);
+                if (mdc != null) MDC.setContextMap(mdc);
+                runnable.run();
+            } finally {
+                SecurityContextHolder.clearContext();
+                MDC.clear();
+            }
+        };
+    }
+}</code></pre>
+    <p><strong>Apply it to your Executor:</strong></p>
+    <pre><code>@Bean
+public Executor myExecutor() {
+    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+    executor.setTaskDecorator(new ContextCopyingDecorator()); // The magic line
+    executor.initialize();
+    return executor;
+}</code></pre>
+
+    <h3>Summary Table: Which fix should you use?</h3>
+    <table>
+      <tr><th>Method</th><th>Effort</th><th>Recommended For...</th></tr>
+      <tr><td>Manual Copy</td><td>High</td><td>One-off tasks or small projects</td></tr>
+      <tr><td>TaskDecorator</td><td>Medium</td><td>Standard Spring Boot apps with a custom thread pool</td></tr>
+      <tr><td>DelegatingExecutor</td><td>Low</td><td>If you only care about Spring Security</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== Q12 ==================== -->
+<div class="qa-block" id="q12">
+  <div class="question">Why CompletableFuture is asking for that ThreadLocal? For normal request it is not using.</div>
+  <div class="answer">
+    <p>The reason "normal" requests don't ask you for this is because of the <strong>Thread-per-Request model</strong> used by servers like Tomcat.</p>
+
+    <h3><span class="section-num">1</span> The "Normal" Request (The Straight Line)</h3>
+    <p>When a request hits your server, Spring assigns <strong>one single thread</strong> to handle it from start to finish. Whether you are in the Controller, Service, or Repository, you are in the <strong>same thread</strong>, so the "pocket" (ThreadLocal) is always accessible.</p>
+    <p>Spring <strong>automatically fills</strong> that pocket at the very beginning of the request and cleans it at the end. You never see it happening.</p>
+
+    <h3><span class="section-num">2</span> The CompletableFuture (The Branch)</h3>
+    <p>The moment you use <code>CompletableFuture.supplyAsync</code>, you are explicitly telling Java: <strong>"Stop using this thread and go do this work on a DIFFERENT thread."</strong></p>
+    <ul>
+      <li><strong>The Wall:</strong> Threads are designed to be isolated. Thread A cannot see inside the "pockets" (ThreadLocal) of Thread B. This is a <strong>security feature</strong> of the JVM.</li>
+      <li><strong>The Disconnect:</strong> Spring's "magic" only knows about the original request thread. It has no idea you've spawned a new sub-thread.</li>
+    </ul>
+
+    <h3>Comparison</h3>
+    <table>
+      <tr><th>Feature</th><th>Normal Request</th><th>CompletableFuture</th></tr>
+      <tr><td>Thread Count</td><td>1 Thread</td><td>2+ Threads</td></tr>
+      <tr><td>Context</td><td>Automatically stays in scope</td><td>Lost at the thread boundary</td></tr>
+      <tr><td>Visibility</td><td>ThreadLocal is "Global" to that thread</td><td>ThreadLocal is Invisible to the new thread</td></tr>
+      <tr><td>Effort</td><td>Zero (Spring handles it)</td><td>Manual (You must "bridge" the gap)</td></tr>
+    </table>
+
+    <h3>Why doesn't Java just copy it automatically?</h3>
+    <ul>
+      <li><strong>Performance:</strong> Copying data every time a thread is created would make the system slow.</li>
+      <li><strong>Safety:</strong> If a background thread modified a "User" object while the main thread was also using it, you'd get unpredictable bugs (Race Conditions).</li>
+      <li><strong>Cleanliness:</strong> If 10 sub-threads inherit data and one forgets to clear it, you get "Memory Leaks."</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== Q13 ==================== -->
+<div class="qa-block" id="q13">
+  <div class="question">From frontend if hitting a request, ThreadLocal holds the data and then when we use CompletableFuture, that call is handed over to other separate threads. Then what happens to ThreadLocal? Each one has separate ThreadLocals?</div>
+  <div class="answer">
+    <p>You've hit the nail on the head. Each Thread object in Java has a hidden internal field called <code>threadLocals</code>. This is essentially a specialized Map (<code>ThreadLocalMap</code>) that belongs <strong>exclusively to that specific thread</strong>.</p>
+
+    <h3>The Lifecycle of the "Hand-off"</h3>
+    <ol>
+      <li><strong>Thread A (The Request Thread):</strong> Spring populates Thread A's ThreadLocalMap with your User ID, JWT, and Trace ID.</li>
+      <li><strong>The Trigger:</strong> You call <code>CompletableFuture.supplyAsync()</code>.</li>
+      <li><strong>The New Player:</strong> Java grabs Thread B from a Thread Pool (like ForkJoinPool or your custom executor).</li>
+      <li><strong>The Isolation:</strong> Thread B has its <strong>own, entirely separate ThreadLocalMap</strong>.
+        <ul>
+          <li>It does not inherit anything from Thread A.</li>
+          <li>It starts with an empty map (or worse, "dirty" data left over from the last task that used Thread B).</li>
+        </ul>
+      </li>
+    </ol>
+
+    <h3>"Wait, what about InheritableThreadLocal?"</h3>
+    <div class="callout warning">
+      <strong>⚠️ Why you should NOT use it here:</strong> <code>InheritableThreadLocal</code> only works if Thread A literally <strong>creates</strong> Thread B right then. In modern backend apps, we use Thread Pools. Thread B <strong>already exists</strong>; it's just sitting in a pool waiting for work. Since Thread A isn't "parenting" Thread B, the inheritance never happens.
+    </div>
+
+    <h3>Summary Table: ThreadLocal States</h3>
+    <table>
+      <tr><th>Feature</th><th>Thread A (Request)</th><th>Thread B (CompletableFuture)</th></tr>
+      <tr><td>Storage Area</td><td>ThreadLocalMap (A)</td><td>ThreadLocalMap (B)</td></tr>
+      <tr><td>Security Context</td><td>Populated by Spring</td><td>Empty</td></tr>
+      <tr><td>MDC (Logs)</td><td>Trace-ID: 123</td><td>Empty</td></tr>
+      <tr><td>Effect on API Call</td><td>Works perfectly</td><td>Sends "Anonymous" request</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== Q14 ==================== -->
+<div class="qa-block" id="q14">
+  <div class="question">So what is the best approach? GraphQL and?</div>
+  <div class="answer">
+    <p>The "best" approach isn't just one tool—it's a combination of a smart <strong>Interface</strong> (how the frontend talks to you) and a powerful <strong>Engine</strong> (how you talk to your services).</p>
+
+    <h3><span class="section-num">1</span> The Interface: GraphQL Federation</h3>
+    <p>Define a "Schema" for all your data. The frontend sends one single query. The GraphQL engine acts as the "Traffic Controller"—it knows which services have which data and fetches them all in one go.</p>
+
+    <h3><span class="section-num">2</span> The Engine: Spring WebClient (Non-Blocking)</h3>
+    <p>WebFlux doesn't rely on ThreadLocal. It uses <strong>Reactor Context</strong>. It's built specifically to carry security and logging data across different threads automatically.</p>
+
+    <h3><span class="section-num">3</span> The Implementation: The "BFF" Pattern</h3>
+    <table>
+      <tr><th>Feature</th><th>Why it wins</th></tr>
+      <tr><td>Consolidation</td><td>10 frontend calls become 1 call.</td></tr>
+      <tr><td>Data Shaping</td><td>The BFF strips out "junk" data the mobile app doesn't need.</td></tr>
+      <tr><td>Security</td><td>The BFF handles heavy authentication once, then uses faster "Internal" calls.</td></tr>
+    </table>
+
+    <h3>The "Action Plan" for you right now</h3>
+    <ol>
+      <li><strong>Stop using RestTemplate:</strong> Start using WebClient.</li>
+      <li><strong>Add Micrometer Context Propagation:</strong> It automatically bridges ThreadLocal data into your async tasks.</li>
+      <li><strong>Enable Gzip/Brotli:</strong> Ensure your new aggregate API is compressing its response.</li>
+    </ol>
+
+    <h3>Comparison of Your Options</h3>
+    <table>
+      <tr><th>Approach</th><th>Speed Gain</th><th>Dev Effort</th><th>"Who Am I" Fix</th></tr>
+      <tr><td>Current (CompletableFuture)</td><td>Good</td><td>Low</td><td>Manual / Difficult</td></tr>
+      <tr><td>WebClient (Reactive)</td><td>Excellent</td><td>Medium</td><td>Built-in / Automatic</td></tr>
+      <tr><td>GraphQL + WebClient</td><td>Best</td><td>High</td><td>Professional / Robust</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== Q15 ==================== -->
+<div class="qa-block" id="q15">
+  <div class="question">Then why in our project they are using RestTemplate? Does it create an advantage?</div>
+  <div class="answer">
+    <p>RestTemplate isn't used because it's "better" for performance—it's used because it is <strong>predictable</strong>.</p>
+
+    <h3><span class="section-num">1</span> The "Mental Model" Advantage (Simplicity)</h3>
+    <p>RestTemplate is Synchronous (Blocking). You send a request, the thread stops and waits, the response comes back. This is how humans think. If there is an error on Line 42, the stack trace tells you exactly what happened.</p>
+
+    <h3><span class="section-num">2</span> Perfect Harmony with ThreadLocal</h3>
+    <p>Since RestTemplate stays on the same thread, you <strong>never lose</strong> the "Who Am I" context. All security filters, logging IDs, and database transactions just work.</p>
+
+    <h3><span class="section-num">3</span> Mature Ecosystem & Tooling</h3>
+    <p>RestTemplate has been around since Spring 3.0 (over a decade). Every library was built to work with it. For a business, <strong>"boring and working" is often better than "bleeding-edge and buggy."</strong></p>
+
+    <h3>Is it actually creating an advantage for your problem?</h3>
+    <p><strong>Honestly? No.</strong> For your specific issue—frontend lag caused by too many API calls—RestTemplate is part of the problem.</p>
+
+    <table>
+      <tr><th>If you stay with RestTemplate...</th><th>The Consequence</th></tr>
+      <tr><td>Sequential Calls</td><td>The user waits: Time(A) + Time(B) + Time(C). Very slow.</td></tr>
+      <tr><td>Parallel (CompletableFuture)</td><td>User waits: Max(A, B, C). Fast, but you break ThreadLocal context.</td></tr>
+      <tr><td>Scaling</td><td>Each waiting request eats a whole thread. Under load, server crashes.</td></tr>
+    </table>
+
+    <div class="callout info">
+      <strong>The "Legacy" Reality:</strong> Spring has marked RestTemplate as being in <strong>maintenance mode</strong>. They aren't adding new features; they want everyone to move to WebClient.
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Q16 ==================== -->
+<div class="qa-block" id="q16">
+  <div class="question">Why not Feign Client?</div>
+  <div class="answer">
+    <p>Feign is <strong>"Syntactic Sugar."</strong> Using Feign is like driving a much prettier car with the <strong>exact same engine</strong> as the RestTemplate truck. It changes how you write the code, but it doesn't automatically change how the code performs.</p>
+
+    <h3><span class="section-num">1</span> The "Clean Code" Advantage</h3>
+    <p>With RestTemplate:</p>
+    <pre><code>return restTemplate.exchange(url, HttpMethod.GET, entity, MyClass.class).getBody();</code></pre>
+    <p>With Feign:</p>
+    <pre><code>@FeignClient(name = "user-service")
+public interface UserClient {
+    @GetMapping("/users/{id}")
+    User getUser(@PathVariable("id") String id);
+}</code></pre>
+
+    <h3><span class="section-num">2</span> Does it solve the "Lag"? (No)</h3>
+    <p>By default, Feign is <strong>Synchronous and Blocking</strong>, just like RestTemplate. You would still have to wrap those Feign calls in CompletableFuture, which brings back the "Who Am I" problem.</p>
+
+    <h3><span class="section-num">3</span> The "Brilliant" Part: RequestInterceptor</h3>
+    <pre><code>@Component
+public class FeignAuthInterceptor implements RequestInterceptor {
+    @Override
+    public void apply(RequestTemplate template) {
+        String token = MySecurityUtils.getTokenFromContext();
+        template.header("Authorization", "Bearer " + token);
+    }
+}</code></pre>
+
+    <h3>Comparison</h3>
+    <table>
+      <tr><th>Feature</th><th>RestTemplate</th><th>Feign Client</th><th>WebClient</th></tr>
+      <tr><td>Style</td><td>Manual / Procedural</td><td>Declarative (Interface)</td><td>Functional / Fluent</td></tr>
+      <tr><td>I/O Model</td><td>Blocking</td><td>Blocking</td><td>Non-Blocking</td></tr>
+      <tr><td>Parallelism</td><td>Needs CompletableFuture</td><td>Needs CompletableFuture</td><td>Built-in</td></tr>
+      <tr><td>Context Loss</td><td>High Risk</td><td>High Risk</td><td>Automatic Handling</td></tr>
+      <tr><td>Best For</td><td>Legacy Apps</td><td>Clean Microservices</td><td>High Performance</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== Q17 ==================== -->
+<div class="qa-block" id="q17">
+  <div class="question">Then what is reactive programming? Spring Boot WebFlux?</div>
+  <div class="answer">
+    <p>If RestTemplate is a walkie-talkie (one person talks, the other listens, and nobody else can use the line), then <strong>Spring Boot WebFlux</strong> is like a WhatsApp group chat. You send a message, put your phone in your pocket, and go about your day until you get a notification.</p>
+
+    <h3><span class="section-num">1</span> The Core Concept: The "Event Loop"</h3>
+    <p>In a normal Spring Boot app (MVC): 200 users = 200 threads.<br>
+    In <strong>WebFlux (Reactive)</strong>: You only need a handful of threads (usually equal to your CPU cores).</p>
+
+    <h3><span class="section-num">2</span> The Vocabulary: Mono and Flux</h3>
+    <ul>
+      <li><strong>Mono&lt;T&gt;:</strong> A promise for <strong>one (or zero) item</strong>. (e.g., fetching a user by ID)</li>
+      <li><strong>Flux&lt;T&gt;:</strong> A promise for a <strong>stream of items</strong> (0 to N). (e.g., a real-time feed of stock prices)</li>
+    </ul>
+
+    <h3><span class="section-num">3</span> Why it's the "Secret Weapon" for your Lag</h3>
+    <ul>
+      <li><strong>Native Aggregation:</strong> "Zip" 10 different API calls (Monos) together. WebFlux handles the parallelism automatically.</li>
+      <li><strong>Context Propagation:</strong> Uses <strong>Reactor Context</strong> instead of ThreadLocal. The context is attached to the stream, not the thread.</li>
+      <li><strong>Backpressure:</strong> If services send data faster than your frontend can handle, WebFlux can tell them to "slow down."</li>
+    </ul>
+
+    <h3>Trade-offs</h3>
+    <table>
+      <tr><th>Feature</th><th>Servlet (Classic MVC)</th><th>WebFlux (Reactive)</th></tr>
+      <tr><td>Learning Curve</td><td>Low (Easy/Linear)</td><td>Very High (Steep)</td></tr>
+      <tr><td>Debugging</td><td>Easy (Linear stack traces)</td><td>Hard (Massive stack traces)</td></tr>
+      <tr><td>Performance</td><td>Great for most apps</td><td>Best for "Chatty" apps</td></tr>
+      <tr><td>Database Support</td><td>Works with everything (JDBC)</td><td>Needs R2DBC drivers</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== Q18 ==================== -->
+<div class="qa-block" id="q18">
+  <div class="question">If we were starting this project today, what would you propose for a project like LMS?</div>
+  <div class="answer">
+    <p>If I were sitting in a room with you as your Lead Architect and we were building a Learning Management System (LMS) from scratch today, we wouldn't just "fix the lag"—we would <strong>design it so lag is impossible</strong>.</p>
+
+    <h3>The 2026 Technology Stack Summary</h3>
+    <table>
+      <tr><th>Layer</th><th>Technology</th><th>Why it's there</th></tr>
+      <tr><td>Frontend</td><td>Next.js / Flutter</td><td>SSR and instant loading</td></tr>
+      <tr><td>API Gateway</td><td>Apollo Router (GraphQL)</td><td>Solve "Chatty API" problem</td></tr>
+      <tr><td>Backend</td><td>Spring Boot WebFlux</td><td>High concurrency without blocking</td></tr>
+      <tr><td>Communication</td><td>gRPC</td><td>Lightning-fast inter-service communication</td></tr>
+      <tr><td>Database</td><td>PostgreSQL + TimescaleDB</td><td>PostgreSQL for data; Timescale for metrics</td></tr>
+      <tr><td>Auth</td><td>OIDC (Okta/Keycloak)</td><td>Standardized, secure "Who Am I" handling</td></tr>
+    </table>
+
+    <h3>Key Components</h3>
+    <ul>
+      <li><strong>GraphQL Federation:</strong> Each microservice provides a small "sub-graph." The Gateway automatically stitches them together.</li>
+      <li><strong>Spring WebFlux:</strong> Non-blocking. 500 students handled with just a few threads.</li>
+      <li><strong>Edge Caching & CDN:</strong> Redis for backend caching, Cloudflare/Fastly for the Edge. 90% of the data served in &lt;20ms.</li>
+      <li><strong>Real-time Progress:</strong> WebSockets/RSocket for instant progress updates without polling.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== Q19 ==================== -->
+<div class="qa-block" id="q19">
+  <div class="question">Then what about WebClient? Deep dive.</div>
+  <div class="answer">
+    <p>If RestTemplate is the old, reliable hammer, WebClient is the high-powered nail gun. It was introduced in Spring 5 as the <strong>official successor to RestTemplate</strong>.</p>
+
+    <h3><span class="section-num">1</span> It is Non-Blocking (The End of Waiting)</h3>
+    <p>With RestTemplate, a thread waits at a counter for coffee. With WebClient, the thread orders, gets a pager, and immediately helps another customer.</p>
+
+    <h3><span class="section-num">2</span> Native Parallelism (No more CompletableFuture)</h3>
+    <pre><code>public Mono&lt;CombinedData&gt; getAggregatedData(String id) {
+    Mono&lt;User&gt; userMono = webClient.get()
+        .uri("/users/{id}", id)
+        .retrieve().bodyToMono(User.class);
+
+    Mono&lt;Course&gt; courseMono = webClient.get()
+        .uri("/courses/{id}", id)
+        .retrieve().bodyToMono(Course.class);
+
+    Mono&lt;Progress&gt; progressMono = webClient.get()
+        .uri("/progress/{id}", id)
+        .retrieve().bodyToMono(Progress.class);
+
+    // This fires all three requests IN PARALLEL automatically
+    return Mono.zip(userMono, courseMono, progressMono)
+        .map(tuple -> new CombinedData(
+            tuple.getT1(), tuple.getT2(), tuple.getT3()));
+}</code></pre>
+
+    <h3><span class="section-num">3</span> It Solves "Who Am I" (Reactor Context)</h3>
+    <p>WebClient doesn't use ThreadLocal. It uses <strong>Reactor Context</strong>. The Context is a "backpack" physically attached to the data stream itself. No matter how many times the data jumps threads, the "backpack" goes with it.</p>
+
+    <h3>Comparison</h3>
+    <table>
+      <tr><th>Feature</th><th>RestTemplate + CompletableFuture</th><th>WebClient</th></tr>
+      <tr><td>I/O Style</td><td>Blocking (Wasteful)</td><td>Non-Blocking (Efficient)</td></tr>
+      <tr><td>Code Style</td><td>Imperative & Verbose</td><td>Functional & Concise</td></tr>
+      <tr><td>Context Handling</td><td>Manual & Buggy (ThreadLocal)</td><td>Automatic (Reactor Context)</td></tr>
+      <tr><td>Resilience</td><td>Needs extra libraries for timeouts</td><td>Built-in .timeout() and .retry()</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== Q20 ==================== -->
+<div class="qa-block" id="q20">
+  <div class="question">WebClient vs WebFlux. When is what used?</div>
+  <div class="answer">
+    <p>Think of it like this: Spring <strong>WebFlux</strong> is the entire toolbox, while <strong>WebClient</strong> is the specific high-powered drill inside that toolbox.</p>
+
+    <h3>The Quick Distinction</h3>
+    <ul>
+      <li><strong>Spring WebFlux:</strong> The <strong>Server-side framework</strong>. It's the reactive alternative to "Spring MVC." Replaces Tomcat with Netty.</li>
+      <li><strong>WebClient:</strong> The <strong>Client-side tool</strong>. It's the reactive alternative to "RestTemplate." You use it to make HTTP calls to other services.</li>
+    </ul>
+
+    <h3>The "Hybrid" Approach (The most common path)</h3>
+    <table>
+      <tr><th>Component</th><th>Technology</th><th>Why?</th></tr>
+      <tr><td>Server Side</td><td>Spring MVC</td><td>Easy to write, easy to debug, works with JDBC/Hibernate</td></tr>
+      <tr><td>API Calling</td><td>WebClient</td><td>Calls services in parallel, reduces lag, handles timeouts</td></tr>
+    </table>
+    <div class="callout tip">
+      <strong>✅ Best Recommendation:</strong> Keep your existing Spring MVC structure (so you don't rewrite everything), but replace your RestTemplate logic with WebClient.
+    </div>
+
+    <h3>When to use what?</h3>
+    <table>
+      <tr><th>Scenario</th><th>Use WebClient</th><th>Use WebFlux (Full stack)</th></tr>
+      <tr><td>Calling 5 APIs in parallel</td><td>✅ Yes</td><td>Optional</td></tr>
+      <tr><td>Replacing RestTemplate</td><td>✅ Yes</td><td>N/A</td></tr>
+      <tr><td>Handling 10k concurrent users</td><td>N/A</td><td>✅ Yes</td></tr>
+      <tr><td>Using Blocking DB (JPA/JDBC)</td><td>✅ Yes</td><td>❌ No (Breaks reactive flow)</td></tr>
+      <tr><td>Building a "BFF" Aggregator</td><td>✅ Yes (As the client)</td><td>✅ Yes (As the server)</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== Q21 ==================== -->
+<div class="qa-block" id="q21">
+  <div class="question">Using DynamoDB Local.</div>
+  <div class="answer">
+    <p>Using DynamoDB (even starting with DynamoDB Local) is a game-changer for your LMS architecture. Since DynamoDB is a NoSQL, HTTP-based database, it fits perfectly into a non-blocking world.</p>
+
+    <h3><span class="section-num">1</span> The Key: AWS SDK for Java v2 (Asynchronous)</h3>
+    <p>SDK v1 is blocking (like RestTemplate). SDK v2 is built on <strong>Netty</strong>, the same engine behind WebClient.</p>
+    <p>It provides a <code>DynamoDbAsyncClient</code>. When you ask for data, your Java thread doesn't sit there waiting. It sends the request and is immediately free.</p>
+
+    <h3><span class="section-num">2</span> How it solves your "LMS Lag"</h3>
+    <pre><code>public Mono&lt;CoursePage&gt; getPageData(String userId, String courseId) {
+    // 1. Call External Video Service (WebClient)
+    Mono&lt;VideoInfo&gt; videoMono = webClient.get()
+        .uri("/videos/{id}", courseId)
+        .retrieve().bodyToMono(VideoInfo.class);
+
+    // 2. Fetch Student Progress from DynamoDB (Async Client)
+    Mono&lt;Progress&gt; progressMono = Mono.fromFuture(
+        dynamoDbAsyncClient.getItem(req)
+    );
+
+    // 3. Combine them IN PARALLEL
+    return Mono.zip(videoMono, progressMono)
+        .map(tuple -> new CoursePage(tuple.getT1(), tuple.getT2()));
+}</code></pre>
+
+    <h3><span class="section-num">3</span> DynamoDB Local vs. Production</h3>
+    <ul>
+      <li><strong>Connection Limit:</strong> DynamoDB Local runs on a single thread by default. High-performance testing may seem slower than production.</li>
+      <li><strong>The Driver:</strong> Use the Async driver even in Local. If you write for Sync now, switching to Async later is a massive headache.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== Q22 ==================== -->
+<div class="qa-block" id="q22">
+  <div class="question">Related to DynamoDB, what all things should I check in project to make sure that Async we required is implemented?</div>
+  <div class="answer">
+    <p>Think of this as your <strong>Async Verification Checklist</strong>.</p>
+
+    <h3><span class="section-num">1</span> The Client Check: Is it "Async"?</h3>
+    <ul>
+      <li>❌ <strong>Wrong (Blocking):</strong> <code>DynamoDbClient</code></li>
+      <li>✅ <strong>Right (Non-Blocking):</strong> <code>DynamoDbAsyncClient</code> (or <code>DynamoDbEnhancedAsyncClient</code>)</li>
+    </ul>
+
+    <h3><span class="section-num">2</span> The Return Type Check</h3>
+    <ul>
+      <li>❌ <strong>Wrong:</strong> <code>public User getUserById(String id)</code></li>
+      <li>✅ <strong>Right:</strong> <code>public CompletableFuture&lt;User&gt; getUserById(String id)</code></li>
+      <li>✅ <strong>Best:</strong> <code>public Mono&lt;User&gt; getUserById(String id)</code></li>
+    </ul>
+    <div class="callout warning">
+      <strong>🚩 Red Flag:</strong> If you see <code>.join()</code> or <code>.get()</code> at the end of a DynamoDB call, STOP. These methods force the thread to wait, turning your fast Async code back into slow blocking code.
+    </div>
+
+    <h3><span class="section-num">3</span> The HTTP Engine Check</h3>
+    <p>Check your <code>pom.xml</code> or <code>build.gradle</code>: Look for <code>netty-nio-client</code>.</p>
+    <pre><code>DynamoDbAsyncClient.builder()
+    .httpClientBuilder(NettyNioAsyncHttpClient.builder()) // This is what you want
+    .build();</code></pre>
+
+    <h3><span class="section-num">4</span> The "Chaining" Check</h3>
+    <pre><code>// Right: These run in a "chain" without blocking any threads
+return studentClient.getStudent(id)
+    .thenCompose(student -> courseClient.getCourses(student.getCourseIds()));</code></pre>
+
+    <h3><span class="section-num">5</span> The "Context Bridge" Check</h3>
+    <p>Search your code for <code>TaskDecorator</code> or <code>ContextSnapshot</code>. If you don't see anything "bridging" the ThreadLocal context, your logs will be empty in DynamoDB callback threads.</p>
+
+    <h3>Summary Table: "How to tell it's Async"</h3>
+    <table>
+      <tr><th>Look for...</th><th>Blocking (Slow)</th><th>Asynchronous (Fast)</th></tr>
+      <tr><td>Java Interface</td><td>DynamoDbClient</td><td>DynamoDbAsyncClient</td></tr>
+      <tr><td>Return Type</td><td>List&lt;T&gt;, User</td><td>CompletableFuture&lt;T&gt;, Mono&lt;T&gt;</td></tr>
+      <tr><td>HTTP Client</td><td>Apache or URLConnection</td><td>Netty or AWS CRT</td></tr>
+      <tr><td>Middle-ware</td><td>.get(), .join()</td><td>.thenApply(), .flatMap()</td></tr>
+    </table>
+
+    <div class="callout tip">
+      <strong>🔥 Pro-Tip for 2026:</strong> Check if your project has <strong>Micrometer Context Propagation</strong> in the dependencies. It often "auto-magically" handles the context loss, solving your "Who Am I" problem without a single line of bridge code.
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Q23 ==================== -->
+<div class="qa-block" id="q23">
+  <div class="question">Overall what is the action plan we need to take? Forget about WebFlux. Best strategic plans. Based on all findings — DynamoDB + WebClient + whatever remaining. Provide the action plan.</div>
+  <div class="answer">
+    <p>Here is your <strong>Senior Architect Strategic Plan</strong>.</p>
+
+    <h3>Phase 1: Establish the BFF (The Aggregator)</h3>
+    <p>Instead of just "another service," treat this as a <strong>dedicated layer</strong>. Its only job is to talk to the frontend and coordinate with the backend.</p>
+    <ul>
+      <li><strong>Goal:</strong> Reduce 20 frontend calls to 1 call.</li>
+      <li><strong>Strategy:</strong> Frontend sends a single request. The BFF fetches, combines, sends back one clean JSON.</li>
+    </ul>
+
+    <h3>Phase 2: Implement "Smart" Parallelism</h3>
+    <ul>
+      <li><strong>Action:</strong> Replace RestTemplate with <strong>WebClient</strong>.</li>
+      <li>Use <code>Mono.zip()</code> to fire all 10 calls at once.</li>
+      <li><strong>Result:</strong> Total response time drops from Sum of all calls → Time of the slowest call.</li>
+    </ul>
+
+    <h3>Phase 3: Solve the Identity Crisis (Context Propagation)</h3>
+    <ul>
+      <li><strong>Action:</strong> Add the <strong>Micrometer Context Propagation</strong> library.</li>
+      <li>It automatically detects your Spring Security context and MDC IDs and "teleports" them across asynchronous threads.</li>
+    </ul>
+
+    <h3>Phase 4: The "Data Diet" (Data Shaping)</h3>
+    <ul>
+      <li><strong>Action:</strong> Filter fields in the BFF.</li>
+      <li>If "User Service" returns 50 fields but the dashboard only needs the name and profile_pic, strip the other 48.</li>
+      <li><strong>Benefit:</strong> Smaller JSON = faster download = happier mobile users.</li>
+    </ul>
+
+    <h3>Phase 5: Infrastructure "Free Wins"</h3>
+    <ul>
+      <li><strong>Enable Gzip/Brotli Compression:</strong> Reduce JSON size by 70–80%.</li>
+      <li><strong>Force HTTP/2:</strong> Multiple streams over one connection.</li>
+      <li><strong>Aggressive Caching:</strong> Redis for data that doesn't change every second.</li>
+    </ul>
+
+    <h3>The Executive Checklist</h3>
+    <table>
+      <tr><th>Priority</th><th>Action</th><th>Impact</th></tr>
+      <tr><td>🔴 CRITICAL</td><td>Parallelize calls using WebClient or CompletableFuture</td><td>🚀 Drastic reduction in lag</td></tr>
+      <tr><td>🟠 HIGH</td><td>Micrometer Context Propagation for security/logs</td><td>🛡️ Fixed "Who Am I" errors</td></tr>
+      <tr><td>🟡 MEDIUM</td><td>DynamoDB Async Client (V2)</td><td>⚡ Non-blocking DB performance</td></tr>
+      <tr><td>🟢 EASY WIN</td><td>Response Compression (Gzip)</td><td>📉 Smaller payloads</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== Q24 ==================== -->
+<div class="qa-block" id="q24">
+  <div class="question">If we use WebClient, then why Micrometer Context Propagation? Also, why does the background thread need to know "Who Am I" for making that call? Just make the call and bring the data. Also after getting the data, will it directly hand over to CPU?</div>
+  <div class="answer">
+    <h3>Part 1: Why does the background thread need to know "Who Am I"?</h3>
+    <p>In a professional Enterprise/LMS system, the background thread needs "Who Am I" for two critical reasons:</p>
+    <ul>
+      <li><strong>The Security Badge (Authorization):</strong> Most backend services are protected. Thread B needs to attach a JWT Token to the header. Without it, the downstream service returns a 401 Unauthorized or null data.</li>
+      <li><strong>The Breadcrumb Trail (Tracing):</strong> If the API call fails, you need to trace it in your logs. Without the Trace ID, the logs from Thread B will be disconnected from the main request.</li>
+    </ul>
+
+    <h3>Part 2: Why Micrometer if we use WebClient?</h3>
+    <p>Your incoming request starts in a traditional Spring MVC thread which <strong>does use ThreadLocal</strong>. WebClient is reactive and doesn't use ThreadLocal. Micrometer Context Propagation is the <strong>"translator"</strong>. It takes the data out of the traditional "ThreadLocal pocket" and puts it into the WebClient's "Reactive Backpack" (Reactor Context).</p>
+    <div class="callout warning">
+      <strong>⚠️ "Stuck" means:</strong> Thread A puts the "Security Token" in its private safe. Thread A sends a message to Thread B: "Go call the Course Service." Thread B looks for a safe in its own room. Its safe is <strong>empty</strong>. It cannot walk into Thread A's room to open that safe.
+    </div>
+
+    <h3>Part 3: Does it "hand over to CPU" after getting data?</h3>
+    <ol>
+      <li><strong>The Network:</strong> Data arrives at your Network Card.</li>
+      <li><strong>The Kernel:</strong> The Operating System receives it.</li>
+      <li><strong>The Thread:</strong> In an Async/WebClient world, the OS sends an "Interrupt" (a notification). A thread from the pool wakes up, grabs the data from memory, and the CPU then processes it.</li>
+    </ol>
+    <div class="callout tip">
+      <strong>The "brilliance" of Async:</strong> The CPU only works when there is actually data to process, instead of sitting idle while the network is busy.
+    </div>
+
+    <h3>CompletableFuture vs. WebClient — The Core Difference</h3>
+    <p><strong>When you use CompletableFuture with RestTemplate:</strong></p>
+    <ul>
+      <li>The Main Thread is free (it's not babysitting).</li>
+      <li><strong>But the Background Thread IS babysitting.</strong> It sits there doing nothing while waiting for the network response.</li>
+      <li>100 students × 5 services = 500 threads sitting idle. Each takes ~1MB RAM.</li>
+    </ul>
+    <p><strong>When you use WebClient:</strong></p>
+    <ul>
+      <li><strong>No thread babysits.</strong> The system sends the request and tells the OS: "Wake me up when the data arrives."</li>
+      <li>You could handle those 500 requests with just 4 or 8 threads.</li>
+    </ul>
+
+    <h3>The Final Strategic Route Map</h3>
+    <table>
+      <tr><th>Step</th><th>Action</th><th>Advantage</th></tr>
+      <tr><td>Step 1: Engine Swap</td><td>Replace RestTemplate with WebClient. Use <code>Mono.zip()</code></td><td>Massive memory savings</td></tr>
+      <tr><td>Step 2: Identity Bridge</td><td>Add <code>micrometer-context-propagation</code>. Enable: <code>Hooks.enableAutomaticContextPropagation();</code></td><td>Logs + security auto-teleport across threads</td></tr>
+      <tr><td>Step 3: DB Speed-up</td><td>DynamoDbAsyncClient (SDK v2). Wrap in <code>Mono.fromFuture()</code></td><td>Backend never waits for DB</td></tr>
+      <tr><td>Step 4: Data Shaping</td><td>Create specific DTOs for BFF</td><td>Faster download for mobile</td></tr>
+      <tr><td>Step 5: Infrastructure</td><td>Enable Gzip/Brotli + HTTP/2</td><td>Zero code changes, 20-30% lag reduction</td></tr>
+    </table>
+
+    <div class="callout tip">
+      <strong>🔥 The single most important line of code:</strong>
+      <pre><code>Hooks.enableAutomaticContextPropagation();</code></pre>
+      This tells the system: "Every time a reactive stream jumps to a new thread, automatically move the 'Who Am I' photo to the new thread." Your "Who Am I" problem is solved <strong>forever</strong>.
+    </div>
+
+    <h3>Final Summary: Why WebClient Wins</h3>
+    <table>
+      <tr><th>Feature</th><th>CompletableFuture + RestTemplate</th><th>WebClient (Reactive)</th></tr>
+      <tr><td>Thread Usage</td><td>High (One per call)</td><td>Low (Few threads for all)</td></tr>
+      <tr><td>Context</td><td>Manual / Difficult to keep</td><td>Automatic (with Micrometer)</td></tr>
+      <tr><td>Scaling</td><td>Hits a "Thread Ceiling" quickly</td><td>Scales to thousands of users</td></tr>
+      <tr><td>Best for...</td><td>Simple, low-traffic tasks</td><td>High-traffic LMS / Microservices</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== FOOTER ==================== -->
+<div class="footer">
+  <p>📘 Interview Preparation Guide — Reactive Programming & Microservices Architecture</p>
+  <p>Generated for Interview Prep &bull; Spring Boot &bull; Java Backend &bull; 2026</p>
+</div>
+
+</div><!-- end container -->
+</body>
+</html>
